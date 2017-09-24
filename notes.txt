@@ -1,0 +1,44 @@
+
+NEED TO THINK HARD ABOUT TIMING OF ENEMY MOVEMENTS IN COMPARISON TO THE RANDOMNESS OF THE PLAYERS MOVING
+
+HAVE SOMETHING IN THE FUTURE THAT TRANSLATES THE HEIGHT
+AND WIDTH FROM THE TEXT FILE 
+
+HAVE SOMETHING IN THE FUTURE THAT MAKES THE HTML FOR YOU 
+
+storing boards
+	- text files
+	- have a function in javascript that gets the height
+	  and width from the text file by reading it in
+
+pacdot 
+	- basic dot, 1 point
+
+power pellets 
+	- bigger, blinking pacdots 
+	- turn ghosts blue
+	- eat ghosts
+
+you win when you eat all the pellets
+
+ghosts
+	- follow you
+	- a little slower than you
+	- run away from you when they're blue
+
+grids needed:
+	- wall
+	- empty space
+	- pacdot
+	- power pellet
+	- ghost1, 2, 3... etc
+	- pacman facing up,down,left,right
+	- blue ghost
+
+mobile version
+	- smaller
+	- more ascii designed
+	- has a keypad 
+
+web version
+	- 
