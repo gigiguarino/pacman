@@ -1,7 +1,7 @@
 XXXXXXXXXXXXXXXXXXX
 Xo.......X.......oX
 X.XX.XXX.X.XXX.XX.X
-X.................X
+X....G..........G.X
 X.XX.X.XXXXX.X.XX.X
 X....X...X...X....X
 XXXX.XXX_X_XXX.XXXX
@@ -17,5 +17,5 @@ X..X.....P.....X..X
 XX.X.X.XXXXX.X.X.XX
 X....X...X...X....X
 X.XXXXXX.X.XXXXXX.X
-Xo...............oX
+Xo...........G...oX
 XXXXXXXXXXXXXXXXXXX

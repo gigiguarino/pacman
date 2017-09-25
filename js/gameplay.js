@@ -6,20 +6,34 @@
 /////////////////////////////
 
 var my_game = 0;
+var done = false;
 var height = 0;
 var width = 0;
+
 var current_index = 0;
 var left_index = 0;
+var start_index = 0;
 var right_index = 0;
-var spots = [];
+
+var moves_since_blue = 0;
+var blue_ghost = false;
+
 var facing = "";
+var previous_key = 0;
+
 var num_dots = 0;
 var my_dots = 0;
+
+var spots = [];
+var ghosts = [];
+var ghost_under_types = [];
+
 
 $(document).ready(function(){
 	get_divs("input/divs/board1.txt");
 	start("input/boards/board1.txt");
 });
+
 
 function assign_spots() {
 	var num = height * width;
@@ -36,9 +50,9 @@ function assign_spots() {
 
 SpotType = {
 	EMPTY 		: 0,
-	WALL 		: 1,
-	PACDOT1		: 2,
-	PACDOT2 	: 3,
+	PACDOT1 	: 1,
+	PACDOT2		: 2,
+	WALL 		: 3,
 	GHOST		: 4,
 	BLUE_GHOST	: 5,
 	PLAYER		: 6,
@@ -104,6 +118,26 @@ function get_image_src(type_in){
 			return "tiles/empty.png";
 		break;
 	}
+};
+
+function turn_ghosts_red(){
+	for(var i = 0; i < ghosts.length; i++){
+		ghosts[i].type = SpotType.GHOST;
+		ghosts[i].img_src = get_image_src(SpotType.GHOST);
+		spots[ghosts[i].index].type = SpotType.GHOST;
+		$(ghosts[i].id).attr("src", ghosts[i].img_src);
+	}
+};
+
+function turn_ghosts_blue(){
+	for(var i = 0; i < ghosts.length; i++){
+		ghosts[i].type = SpotType.BLUE_GHOST;
+		ghosts[i].img_src = get_image_src(SpotType.BLUE_GHOST);
+		spots[ghosts[i].index].type = SpotType.BLUE_GHOST;
+		$(ghosts[i].id).attr("src", ghosts[i].img_src);
+	}
+	moves_since_blue = 10;
+	blue_ghost = true;
 };
 
 var Spot = function(type_in, index_in, x_in, y_in) {
@@ -181,17 +215,35 @@ function initialize_game(height_in, width_in, spots_in) {
 	for (var h = 0; h < height; h++){
 		for (var w = 0; w < width; w++){
 			var type = get_type(spots_in[curr_spot]);
-			if (type == SpotType.PLAYER){
-				current_index = curr_spot;
-			}
-			if (type == SpotType.LEFT){
-				left_index = curr_spot;
-			}
-			if (type == SpotType.RIGHT){
-				right_index = curr_spot;
-			}
-			if (type == SpotType.PACDOT1 || type == SpotType.PACDOT2){
-				window.num_dots += 1;
+			var new_ghost = 0;
+			switch (type){
+
+				case SpotType.PLAYER:
+					current_index = curr_spot;
+					start_index = curr_spot;
+				break;
+
+				case SpotType.LEFT:
+					left_index = curr_spot;
+				break;
+
+				case SpotType.RIGHT:
+					right_index = curr_spot;
+				break;
+
+				case SpotType.PACDOT1:
+				case SpotType.PACDOT2:
+					window.num_dots += 1;
+				break;
+
+				case SpotType.GHOST:
+					new_ghost = new Spot(type, curr_spot, w, h);
+					window.ghosts.push(new_ghost);
+					window.ghost_under_types.push(SpotType.EMPTY);
+				break;
+
+				default:
+				break;
 			}
 			var new_spot = new Spot(type, curr_spot, w, h);
 			window.spots.push(new_spot);
@@ -203,6 +255,7 @@ function initialize_game(height_in, width_in, spots_in) {
 
 
 function update_spot(index, new_type){
+	console.log(index + " " + new_type);
 	if (index != left_index && index != right_index) {
 		window.spots[index].type = new_type;
 	}
@@ -214,58 +267,58 @@ function get_index(x,y){
 	return ((y * width) + x);
 };
 
-function up_spot(){
-	if (spots[current_index].y == 0){
-		return spots[current_index];
+function up_spot(index){
+	if (spots[index].y == 0){
+		return spots[index];
 	}
 	else {
 		return spots[get_index(
-			spots[current_index].x,
-			spots[current_index].y - 1)];
+			spots[index].x,
+			spots[index].y - 1)];
 	}
 };
 
-function down_spot(){
+function down_spot(index){
 	if (spots[current_index].y == height-1){
-		return spots[current_index];
+		return spots[index];
 	}
 	else {
 		return spots[get_index(
-			spots[current_index].x,
-			spots[current_index].y + 1)];
+			spots[index].x,
+			spots[index].y + 1)];
 	}
 };
 
-function left_spot(){
+function left_spot(index){
 	if (spots[current_index].type == SpotType.LEFT){
 		// wrap around to other side of board
 		return spots[get_index(
 			(width - 1), 
-			spots[current_index].y)];
+			spots[index].y)];
 	}
-	else if (spots[current_index].x == 0){
-		return spots[current_index];
+	else if (spots[index].x == 0){
+		return spots[index];
 	}
 	else {
 		return spots[get_index(
-			spots[current_index].x - 1,
-			spots[current_index].y)];
+			spots[index].x - 1,
+			spots[index].y)];
 	}
 };
 
-function right_spot(){
-	if (spots[current_index].type == SpotType.RIGHT){
+function right_spot(index){
+	if (spots[index].type == SpotType.RIGHT){
 		// wrap around to other side of board
 		return spots[get_index(
-			0, spots[current_index].y)];
+			0, spots[index].y)];
 	}
-	else if (spots[current_index].x == width-1){
-		return spots[current_index];
+	else if (spots[index].x == width-1){
+		return spots[index];
 	}
 	else {
 		return spots[get_index(
-			spots[current_index].x + 1,
-			spots[current_index].y)];
+			spots[index].x + 1,
+			spots[index].y)];
 	}
 };
 
@@ -291,6 +344,7 @@ $(document).keydown(function(e){
 
 		case 38:
 			// up
+
 			my_game.move("up");
 		break;
 
@@ -318,107 +372,245 @@ $(document).keydown(function(e){
 	}
 });
 
+
+function check_this_spot(key){
+	switch(key){
+		case "up":
+		break;
+		case "down":
+		break;
+		case "left":
+		break;
+		case "right":
+		break;
+		default:
+		break;
+	}
+}
+
+function move_ghosts() {
+	// blue ghosts move two times slower
+	var left = 0;
+	var up = 0;
+	var down = 0;
+	var right = 0;
+	var idx = 0;
+	var new_spot = 0;
+	var placeholder = 0;
+	if (moves_since_blue%2 == 0){
+		// move blue ghosts every two times
+		// move red ghosts always 
+		for (var i = 0; i < ghosts.length; i++){
+			idx = ghosts[i].index;
+			left = left_spot(idx);
+			up = up_spot(idx);
+			down = down_spot(idx);
+			right = right_spot(idx);
+			if (ghosts[i].index > current_index){
+				// up > left > right > down
+				if (up.type != SpotType.WALL && left.type != SpotType.WALL){
+					if ((ghosts[i].index - current_index) > 150){
+						new_spot = up;
+					}
+					else {
+						new_spot = left;
+					}
+				}
+				else if (up.type != SpotType.WALL){
+					new_spot = up;
+				}
+				else if (left.type != SpotType.WALL){
+					new_spot = left;
+				}
+				else if (right.type != SpotType.WALL){
+					new_spot = right;
+				}
+				else if (down.type != SpotType.WALL){
+					new_spot = down;
+				}
+			} 
+			else {
+				if (down.type != SpotType.WALL && right.type != SpotType.WALL){
+					if ((current_index - ghosts[i].index) > 150){
+						new_spot = down;
+					}
+					else {
+						new_spot = right;
+					}
+				}
+				else if (down.type != SpotType.WALL){
+					new_spot = down;
+				}
+				else if (right.type != SpotType.WALL){
+					new_spot = right;
+				}
+				else if (left.type != SpotType.WALL){
+					new_spot = left;
+				}
+				else if (up.type != SpotType.WALL){
+					new_spot = up;
+				}
+			}
+			placeholder = new_spot.type;
+			// update new spot with ghost image
+			update_spot(new_spot.index, ghosts[i].type);
+			// update old spot with pacdot if there was one there before
+			// update old spot with empty if there wasnt one
+			update_spot(window.ghosts[i].index, ghost_under_types[i]);
+			ghost_under_types[i] = placeholder;
+			// update ghosts position
+			window.ghosts[i].x = new_spot.x;
+			window.ghosts[i].y = new_spot.y;
+			window.ghosts[i].index = new_spot.index;
+			window.ghosts[i].id = new_spot.id;
+		}
+	}
+};
+
 Game.prototype.move = function(direction) {
 	var new_spot = 0;
+	var checked = true;
+	var placeholder = 0;
 
-	switch(direction){
-
-		case "up":
-			new_spot = up_spot();
-		break;
-
-		case "down":
-			new_spot = down_spot();
-		break;
-
-		case "left":
-			new_spot = left_spot();
-		break;
-
-		case "right":
-			new_spot = right_spot();
-		break;
-
-		default:
-			// error?
-		break;
+	if (moves_since_blue == 0 && blue_ghost){
+		blue_ghost = false;
+		turn_ghosts_red();
+	} 
+	else if (blue_ghost){
+		moves_since_blue -= 1;
 	}
 
-	console.log(spots[current_index]);
-	console.log(new_spot);
 
-	switch(new_spot.type){
-		
-		case SpotType.WALL:
-			// can't move
-			// stay where you are
-		break;
+	while (checked){
+		switch(direction){
 
-		case SpotType.LEFT:
-		case SpotType.RIGHT:
-		case SpotType.PLAYER:
-		case SpotType.EMPTY:
-			// make new spot player type
-			facing = direction;
-			update_spot(new_spot.index, SpotType.PLAYER);
-			// make old spot empty
-			update_spot(current_index, SpotType.EMPTY);
-			current_index = new_spot.index;
-		break;
+			case "up":
+				if (previous_key == 0){
+					previous_key = direction;
+				}
+				new_spot = up_spot(current_index);
+			break;
 
-		case SpotType.PACDOT1:
-			// erase dot
-			my_dots += 1;
-			// collect point
-			// make new spot player type
-			facing = direction;
-			update_spot(new_spot.index, SpotType.PLAYER);
-			// make old spot empty
-			update_spot(current_index, SpotType.EMPTY);
-			current_index = new_spot.index;
-			if (my_dots == num_dots){
-				win();
-			}
-		break;
+			case "down":
+				if (previous_key == 0){
+					previous_key = direction;
+				}
+				new_spot = down_spot(current_index);
+			break;
 
-		case SpotType.PACDOT2:
-			// erase dot
-			my_dots += 1;
-			// collect points
-			// turn ghosts blue
-			// make new spot player type
-			facing = direction;
-			update_spot(new_spot.index, SpotType.PLAYER);
-			// make old spot empty
-			update_spot(current_index, SpotType.EMPTY);
-			current_index = new_spot.index;
-			if (my_dots == num_dots){
-				win();
-			}
-		break;
+			case "left":
+				if (previous_key == 0){
+					previous_key = direction;
+				};
+				new_spot = left_spot(current_index);
+			break;
 
-		case SpotType.GHOST:
-			// die
-			// lose points
-			// make old spot empty
-			facing = "";
-			update_spot(current_index, SpotType.EMPTY);
-			// reset back at start spot
-			update_spot(get_index(start_x, start_y), SpotType.PLAYER);
-			// enemies are back in center
-		break;
+			case "right":
+				if (previous_key == 0){
+					previous_key = direction;
+				};
+				new_spot = right_spot(current_index);
+			break;
 
-		case SpotType.BLUE_GHOST:
-			// eat the ghost
-			// collect points
-			// make new spot player type
-			facing = direction;
-			update_spot(new_spot.index, SpotType.PLAYER);
-			// make old spot empty
-			update_spot(current_index, SpotType.EMPTY);
-			current_index = new_spot.index;
-		break;
+			default:
+				// error?
+			break;
+		}
+
+		switch(new_spot.type){
+
+			
+			case SpotType.WALL:
+				// can't move
+				// stay where you are
+				// check previous key
+				if (!checked){
+					checked = true;
+				}
+				if (previous_key == direction){
+					checked = false;
+				}
+			break;
+
+			case SpotType.LEFT:
+			case SpotType.RIGHT:
+			case SpotType.PLAYER:
+			case SpotType.EMPTY:
+				// make new spot player type
+				checked = false;
+				facing = direction;
+				update_spot(new_spot.index, SpotType.PLAYER);
+				// make old spot empty
+				update_spot(current_index, SpotType.EMPTY);
+				current_index = new_spot.index;
+			break;
+
+			case SpotType.PACDOT1:
+				// erase dot
+				my_dots += 1;
+				// collect point
+				// make new spot player type
+				checked = false;
+				facing = direction;
+				update_spot(new_spot.index, SpotType.PLAYER);
+				// make old spot empty
+				update_spot(current_index, SpotType.EMPTY);
+				current_index = new_spot.index;
+				if (my_dots == num_dots){
+					win();
+				}
+			break;
+
+			case SpotType.PACDOT2:
+				// erase dot
+				my_dots += 1;
+				// collect points
+				// turn ghosts blue
+				turn_ghosts_blue();
+				// make new spot player type
+				checked = false;
+				facing = direction;
+				update_spot(new_spot.index, SpotType.PLAYER);
+				// make old spot empty
+				update_spot(current_index, SpotType.EMPTY);
+				current_index = new_spot.index;
+				if (my_dots == num_dots){
+					win();
+				}
+			break;
+
+			case SpotType.GHOST:
+				// die
+				// lose points
+				// make old spot empty
+				checked = false;
+				facing = "";
+				update_spot(current_index, SpotType.EMPTY);
+				// reset back at start spot
+				update_spot(start_index, SpotType.PLAYER);
+				current_index = start_index;
+				// enemies are back in center
+			break;
+
+			case SpotType.BLUE_GHOST:
+				// eat the ghost
+				// collect points
+				// make new spot player type
+				checked = false;
+				facing = direction;
+				update_spot(new_spot.index, SpotType.PLAYER);
+				// make old spot empty
+				update_spot(current_index, SpotType.EMPTY);
+				current_index = new_spot.index;
+			break;
+		}
+		placeholder = previous_key;
+		previous_key = direction;
+		direction = placeholder;
 	}
+
+	// ghosts move after you
+	move_ghosts();
 };
 
 
@@ -427,7 +619,7 @@ Game.prototype.move = function(direction) {
 //////////////////////////////
 
 function win(){
-	
+
 }
 
 
