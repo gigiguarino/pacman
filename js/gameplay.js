@@ -1,12 +1,4 @@
 
-//////////////////////////////
-// DEFINES
-/////////////////////////////
-
-var start_x = 9;
-var start_y = 15;
-var height = 21;
-var width = 19;
 
 
 //////////////////////////////
@@ -14,50 +6,33 @@ var width = 19;
 /////////////////////////////
 
 var my_game = 0;
+var height = 0;
+var width = 0;
+var current_index = 0;
+var left_index = 0;
+var right_index = 0;
+var spots = [];
+var facing = "";
+var num_dots = 0;
+var my_dots = 0;
 
 $(document).ready(function(){
-	start("boards/blank_board.txt");
+	get_divs("input/divs/board1.txt");
+	start("input/boards/board1.txt");
 });
+
+function assign_spots() {
+	var num = height * width;
+	var name = "";
+	for (var i = 0; i < num; i++){
+		name = "#tile" + i;
+		$(name).attr("src", spots[i].img_src);
+	}
+};
 
 //////////////////////////////
 // SPOT ON BOARD
 /////////////////////////////
-
-function get_image_src(type_in){
-	switch(type_in){
-
-		case LEFT:
-		case RIGHT:
-		case EMPTY:
-			return "beta_tiles/empty.png";
-		break;
-
-		case WALL:
-			return "beta_tiles/wall.png";
-		break;
-
-		case PACDOT1:
-			return "beta_tiles/pacdot1.png";
-		break;
-
-		case PACDOT2:
-			return "beta_tiles/pacdot2.png";
-		break;
-
-		case GHOST:
-			return "beta_tiles/ghost.png";
-		break;
-
-		case BLUE_GHOST:
-			return "beta_tiles/blue_ghost.png";
-		break;
-
-		default:
-			// error?
-			return "beta_tiles/empty.png";
-		break;
-	}
-};
 
 SpotType = {
 	EMPTY 		: 0,
@@ -71,11 +46,65 @@ SpotType = {
 	RIGHT 		: 8
 }
 
-Spot.prototype.type = SpotType.EMPTY;
-Spot.prototype.index = 0;
-Spot.prototype.x = 0;
-Spot.prototype.y = 0;
-Spot.prototype.img_src = "";
+function get_image_src(type_in){
+	switch(type_in){
+
+		case SpotType.LEFT:
+		case SpotType.RIGHT:
+		case SpotType.EMPTY:
+			return "tiles/empty.png";
+		break;
+
+		case SpotType.WALL:
+			return "tiles/wall.png";
+		break;
+
+		case SpotType.PACDOT1:
+			return "tiles/pacdot1.png";
+		break;
+
+		case SpotType.PACDOT2:
+			return "tiles/pacdot2.png";
+		break;
+
+		case SpotType.GHOST:
+			return "tiles/ghost.png";
+		break;
+
+		case SpotType.BLUE_GHOST:
+			return "tiles/blue_ghost.png";
+		break;
+
+		case SpotType.PLAYER:
+			switch (facing){
+				case "up":
+					return "tiles/player_up.png";
+				break;
+
+				case "down":
+					return "tiles/player_down.png";
+				break;
+
+				case "left":
+					return "tiles/player_left.png";
+				break;
+
+				case "right":
+					return "tiles/player_right.png";
+				break;
+
+				default:
+					return "tiles/player.png";
+				break;
+			}	
+		break;
+
+		default:
+			// error?
+			return "tiles/empty.png";
+		break;
+	}
+};
 
 var Spot = function(type_in, index_in, x_in, y_in) {
 	this.type = type_in;
@@ -83,7 +112,15 @@ var Spot = function(type_in, index_in, x_in, y_in) {
 	this.x = x_in;
 	this.y = y_in;
 	this.img_src = get_image_src(type_in);
+	this.id = "#tile" + index_in;
 };
+
+Spot.prototype.type = SpotType.EMPTY;
+Spot.prototype.index = 0;
+Spot.prototype.id = 0;
+Spot.prototype.x = 0;
+Spot.prototype.y = 0;
+Spot.prototype.img_src = "";
 
 
 //////////////////////////////
@@ -94,7 +131,7 @@ function get_type(type_in) {
 	// switch statement
 	switch(type_in){
 
-		case " ":
+		case "_":
 			return SpotType.EMPTY;
 		break;
 
@@ -122,6 +159,14 @@ function get_type(type_in) {
 			return SpotType.PLAYER;
 		break;
 
+		case "L":
+			return SpotType.LEFT;
+		break;
+
+		case "R":
+			return SpotType.RIGHT;
+		break;
+
 		default:
 			// error?
 			return SpotType.EMPTY;
@@ -129,94 +174,107 @@ function get_type(type_in) {
 	}
 };
 
-Board.prototype.height = 0;
-Board.prototype.width = 0;
-Board.prototype.current_spot = 0;
-Board.prototype.spots = [];
-
-Board.prototype.update_spot = function(index, new_type){
-	this.spots[index].type = new_type;
-	this.spots[index].img_src = get_image_src(new_type);
-}
-
-Board.prototype.get_index = function(x,y){
-	return ((x * this.height) + y);
-};
-
-Board.prototype.up_spot = function() {
-	if (this.current_spot.y == 0){
-		return spots[this.current_spot.index];
-	}
-	else {
-		return spots[this.get_index(
-			this.current_spot.x,
-			this.current_spot.y - 1)];
-	}
-};
-
-Board.prototype.down_spot = function() {
-	if (this.current_spot.y == this.height-1){
-		return spots[this.current_spot.index];
-	}
-	else {
-		return spots[this.get_index(
-			this.current_spot.x,
-			this.current_spot.y + 1)];
-	}
-};
-
-Board.prototype.left_spot = function() {
-	if (spots[this.current_spot.index].type == SpotType.LEFT){
-		// wrap around to other side of board
-		return spots[this.get_index(
-			(this.width - 1), 
-			this.current_spot.y)];
-	}
-	else if (this.current_spot.x == 0){
-		return spots[this.current_spot.index];
-	}
-	else {
-		return spots[this.get_index(
-			this.current_spot.x - 1,
-			this.current_spot.y)];
-	}
-};
-
-Board.prototype.right_spot = function() {
-	if (spots[this.current_spot.index].type == SpotType.RIGHT){
-		// wrap around to other side of board
-		return spots[this.get_index(
-			0, this.current_spot.y)];
-	}
-	else if (this.current_spot.x == this.width-1){
-		return spots[this.current_spot.index];
-	}
-	else {
-		return spots[this.get_index(
-			this.current_spot.x + 1),
-			this.current_spot.y];
-	}
-};
-
-
-var Board = function() {};
-var Board = function(height_in, width_in, x_in, y_in, spots_in) {
-	this.height = height_in;
-	this.width = width_in;
+function initialize_game(height_in, width_in, spots_in) {
+	window.height = height_in;
+	window.width = width_in;
 	var curr_spot = 0;
-	for (var h = 0; h < this.height; h++){
-		for (var w = 0; w < this.width; w++){
-			
-			if (x_in == w && y_in == h){
-				this.current_index = curr_spot;
-			}
-
+	for (var h = 0; h < height; h++){
+		for (var w = 0; w < width; w++){
 			var type = get_type(spots_in[curr_spot]);
-			var new_spot = new Spot(type, curr_spot, h, w);
-			this.spots.push(new_spot);
+			if (type == SpotType.PLAYER){
+				current_index = curr_spot;
+			}
+			if (type == SpotType.LEFT){
+				left_index = curr_spot;
+			}
+			if (type == SpotType.RIGHT){
+				right_index = curr_spot;
+			}
+			if (type == SpotType.PACDOT1 || type == SpotType.PACDOT2){
+				window.num_dots += 1;
+			}
+			var new_spot = new Spot(type, curr_spot, w, h);
+			window.spots.push(new_spot);
 			curr_spot++;
 		}
 	}
+	assign_spots();
+};
+
+
+function update_spot(index, new_type){
+	if (index != left_index && index != right_index) {
+		window.spots[index].type = new_type;
+	}
+	window.spots[index].img_src = get_image_src(new_type);
+	$(spots[index].id).attr("src", spots[index].img_src);
+}
+
+function get_index(x,y){
+	return ((y * width) + x);
+};
+
+function up_spot(){
+	if (spots[current_index].y == 0){
+		return spots[current_index];
+	}
+	else {
+		return spots[get_index(
+			spots[current_index].x,
+			spots[current_index].y - 1)];
+	}
+};
+
+function down_spot(){
+	if (spots[current_index].y == height-1){
+		return spots[current_index];
+	}
+	else {
+		return spots[get_index(
+			spots[current_index].x,
+			spots[current_index].y + 1)];
+	}
+};
+
+function left_spot(){
+	if (spots[current_index].type == SpotType.LEFT){
+		// wrap around to other side of board
+		return spots[get_index(
+			(width - 1), 
+			spots[current_index].y)];
+	}
+	else if (spots[current_index].x == 0){
+		return spots[current_index];
+	}
+	else {
+		return spots[get_index(
+			spots[current_index].x - 1,
+			spots[current_index].y)];
+	}
+};
+
+function right_spot(){
+	if (spots[current_index].type == SpotType.RIGHT){
+		// wrap around to other side of board
+		return spots[get_index(
+			0, spots[current_index].y)];
+	}
+	else if (spots[current_index].x == width-1){
+		return spots[current_index];
+	}
+	else {
+		return spots[get_index(
+			spots[current_index].x + 1,
+			spots[current_index].y)];
+	}
+};
+
+
+var Game = function() {};
+var Game = function(text) {
+	var values = text.split('\n');
+	// make board
+	initialize_game(values[0], values[1], values[2]);
 };
 
 
@@ -266,25 +324,28 @@ Game.prototype.move = function(direction) {
 	switch(direction){
 
 		case "up":
-			new_spot = board.up_spot;
+			new_spot = up_spot();
 		break;
 
 		case "down":
-			new_spot = board.down_spot;
+			new_spot = down_spot();
 		break;
 
 		case "left":
-			new_spot = board.left_spot;
+			new_spot = left_spot();
 		break;
 
 		case "right":
-			new_spot = board.right_spot;
+			new_spot = right_spot();
 		break;
 
 		default:
 			// error?
 		break;
 	}
+
+	console.log(spots[current_index]);
+	console.log(new_spot);
 
 	switch(new_spot.type){
 		
@@ -293,92 +354,120 @@ Game.prototype.move = function(direction) {
 			// stay where you are
 		break;
 
+		case SpotType.LEFT:
+		case SpotType.RIGHT:
 		case SpotType.PLAYER:
 		case SpotType.EMPTY:
 			// make new spot player type
-			this.board.update_spot(new_spot.index, SpotType.PLAYER);
+			facing = direction;
+			update_spot(new_spot.index, SpotType.PLAYER);
 			// make old spot empty
-			this.board.update_spot(this.board.current_spot.index, SpotType.EMPTY);
-			this.board.current_spot = new_spot;
+			update_spot(current_index, SpotType.EMPTY);
+			current_index = new_spot.index;
 		break;
 
 		case SpotType.PACDOT1:
 			// erase dot
+			my_dots += 1;
 			// collect point
 			// make new spot player type
-			this.board.update_spot(new_spot.index, SpotType.PLAYER);
+			facing = direction;
+			update_spot(new_spot.index, SpotType.PLAYER);
 			// make old spot empty
-			this.board.update_spot(this.board.current_spot.index, SpotType.EMPTY);
-			this.board.current_spot = new_spot;
-
+			update_spot(current_index, SpotType.EMPTY);
+			current_index = new_spot.index;
+			if (my_dots == num_dots){
+				win();
+			}
 		break;
 
 		case SpotType.PACDOT2:
 			// erase dot
+			my_dots += 1;
 			// collect points
 			// turn ghosts blue
-			// make new spot player type 
-			this.board.update_spot(new_spot.index, SpotType.PLAYER);
+			// make new spot player type
+			facing = direction;
+			update_spot(new_spot.index, SpotType.PLAYER);
 			// make old spot empty
-			this.board.update_spot(this.board.current_spot.index, SpotType.EMPTY);
-			this.board.current_spot = new_spot;
+			update_spot(current_index, SpotType.EMPTY);
+			current_index = new_spot.index;
+			if (my_dots == num_dots){
+				win();
+			}
 		break;
 
 		case SpotType.GHOST:
 			// die
 			// lose points
 			// make old spot empty
-			this.board.update_spot(this.board.current_spot.index, SpotType.EMPTY);
+			facing = "";
+			update_spot(current_index, SpotType.EMPTY);
 			// reset back at start spot
-			this.board.update_spot(get_index(start_x, start_y), SpotType.PLAYER);
+			update_spot(get_index(start_x, start_y), SpotType.PLAYER);
 			// enemies are back in center
 		break;
 
 		case SpotType.BLUE_GHOST:
 			// eat the ghost
 			// collect points
-			// make old spot empty
 			// make new spot player type
+			facing = direction;
+			update_spot(new_spot.index, SpotType.PLAYER);
+			// make old spot empty
+			update_spot(current_index, SpotType.EMPTY);
+			current_index = new_spot.index;
 		break;
 	}
 };
 
 
 //////////////////////////////
-// GAME
+// WIN!
 //////////////////////////////
 
-Game.prototype.board = 0;
+function win(){
+	
+}
 
-var Game = function() {};
-var Game = function(text) {
 
-	// remove newlines from text
-	var new_text = text.replace(/\n/g, "");
-	// make board
-	this.board = new Board(height, width, start_x, start_y, new_text);
-};
 
-function start(filename){
-	filename = "file://" + filename;
-	var file = new XMLHttpRequest();
-	var text = "";
-	file.open("GET", filename, false);
-	file.onreadystatechanfge = function() {
-		if (file.readyState == 4){
-			if (file.status == 200 || file .status == 0){
-				text = file.responseText;
+//////////////////////////////
+// READING FILES
+//////////////////////////////
+
+function get_divs(filename){
+	$.ajax({
+		url: filename,
+		dataType: "text",
+		success: function (data) {
+			if (data == ""){
+				// nothing in file?
+				// error?
+				alert("error?");
+			}
+			else{
+				$("#board").html(data);
 			}
 		}
-	}
-	file.send(null);
+	});	
+}
 
-	if (text == ""){
-		// nothing in file??
-		// error?
-	}
-
-	my_game = new Game(text);
+function start(filename){
+	$.ajax({
+		url: filename,
+		dataType: "text",
+		success: function (data) {
+			if (data == ""){
+				// nothing in file?
+				// error?
+				alert("error?");
+			}
+			else{
+				my_game = new Game(data);
+			}
+		}
+	});
 }
 
 

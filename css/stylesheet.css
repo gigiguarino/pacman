@@ -1,0 +1,10 @@
+
+#board {
+	line-height: 14px;
+}
+.tile {
+	display: inline-block;
+	height: 32px;
+	width: 32px;
+	margin: -2px;
+}
