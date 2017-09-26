@@ -1,30 +1,22 @@
 
 NEED TO THINK HARD ABOUT TIMING OF ENEMY MOVEMENTS IN COMPARISON TO THE RANDOMNESS OF THE PLAYERS MOVING
 
-HAVE SOMETHING IN THE FUTURE THAT TRANSLATES THE HEIGHT
-AND WIDTH FROM THE TEXT FILE 
 
-HAVE SOMETHING IN THE FUTURE THAT MAKES THE HTML FOR YOU 
-
-storing boards
-	- text files
-	- have a function in javascript that gets the height
-	  and width from the text file by reading it in
-
-pacdot 
-	- basic dot, 1 point
-
-power pellets 
-	- bigger, blinking pacdots 
-	- turn ghosts blue
-	- eat ghosts
-
-you win when you eat all the pellets
-
-ghosts
-	- follow you
-	- a little slower than you
-	- run away from you when they're blue
+types of walls
+bottom left corner	1
+bottom right corner	2
+top left corner		3
+top right corner	4
+straight up and down	5
+left and right		6
+three open - top closed		7
+three open - left closed	8
+three open - bottom closed	9
+three open - right closed	0	10
+three closed - top open		#	11
+three closed - left open 	&	12
+three closed - bottom open	*	13
+three closed - right open 	@	14
 
 grids needed:
 	- wall
@@ -40,5 +32,3 @@ mobile version
 	- more ascii designed
 	- has a keypad 
 
-web version
-	- 
